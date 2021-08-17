@@ -79,7 +79,7 @@ func TestServerApp_DevMode(t *testing.T) {
 
 	providers := app.restSrv.Authenticator.Providers()
 	require.Equal(t, 8+1, len(providers), "extra auth provider")
-	assert.Equal(t, "dev", providers[len(providers)-2].Name(), "dev auth provider")
+	assert.Equal(t, "dev", providers[len(providers)-3].Name(), "dev auth provider")
 	// send ping
 	resp, err := http.Get(fmt.Sprintf("http://localhost:%d/api/v1/ping", port))
 	require.NoError(t, err)

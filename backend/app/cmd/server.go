@@ -792,27 +792,6 @@ func (s *ServerCommand) addAuthProviders(ctx context.Context, authenticator *aut
 		authenticator.AddProvider("twitter", s.Auth.Twitter.CID, s.Auth.Twitter.CSEC)
 		providers++
 	}
-	if s.Auth.Telegram {
-		telegram := &provider.TelegramHandler{
-			ProviderName: "telegram",
-			ErrorMsg:     "❌ Invalid auth request. Please try clicking link again.",
-			SuccessMsg:   "✅ You have successfully authenticated!",
-			Telegram:     provider.NewTelegramAPI(s.Telegram.Token, &http.Client{Timeout: s.Telegram.Timeout}),
-			L:            log.Default(),
-			TokenService: authenticator.TokenService(),
-			AvatarSaver:  authenticator.AvatarProxy(),
-		}
-		// Run Telegram provider in the background
-		go func() {
-			err := telegram.Run(ctx)
-			if err != nil {
-				log.Printf("[ERROR] telegram auth error %+v", err)
-			}
-		}()
-		authenticator.AddCustomHandler(telegram)
-
-		providers++
-	}
 
 	if s.Auth.Dev {
 		log.Print("[INFO] dev access enabled")
@@ -838,6 +817,28 @@ func (s *ServerCommand) addAuthProviders(ctx context.Context, authenticator *aut
 			return err
 		}
 		authenticator.AddVerifProvider("email", tmpl, sndr)
+	}
+
+	if s.Auth.Telegram {
+		telegram := &provider.TelegramHandler{
+			ProviderName: "telegram",
+			ErrorMsg:     "❌ Invalid auth request. Please try clicking link again.",
+			SuccessMsg:   "✅ You have successfully authenticated!",
+			Telegram:     provider.NewTelegramAPI(s.Telegram.Token, &http.Client{Timeout: s.Telegram.Timeout}),
+			L:            log.Default(),
+			TokenService: authenticator.TokenService(),
+			AvatarSaver:  authenticator.AvatarProxy(),
+		}
+		// Run Telegram provider in the background
+		go func() {
+			err := telegram.Run(ctx)
+			if err != nil {
+				log.Printf("[ERROR] telegram auth error %+v", err)
+			}
+		}()
+		authenticator.AddCustomHandler(telegram)
+
+		providers++
 	}
 
 	if s.Auth.Anonymous {

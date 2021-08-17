@@ -57,6 +57,14 @@ export const messages = defineMessages({
     id: 'auth.submit',
     defaultMessage: 'Submit',
   },
+  telegramLink: {
+    id: 'auth.telegram-link',
+    defaultMessage: "Open in telegram and click 'Start'",
+  },
+  telegramCheck: {
+    id: 'auth.telegram-check',
+    defaultMessage: "Check after clicking 'Start'",
+  },
   openProfile: {
     id: 'auth.open-profile',
     defaultMessage: 'Open My Profile',

@@ -96,7 +96,7 @@ export interface Tree {
 }
 
 export type OAuthProvider = 'facebook' | 'twitter' | 'google' | 'yandex' | 'github' | 'microsoft' | 'dev';
-export type FormProvider = 'email' | 'anonymous';
+export type FormProvider = 'email' | 'telegram' | 'anonymous';
 export type Provider = OAuthProvider | FormProvider;
 
 export interface Config {
@@ -157,4 +157,9 @@ export interface ApiError {
   details: string;
   /** in-depth explanation */
   error: string;
+}
+
+export interface TelegramParams {
+  bot: string;
+  token: string;
 }

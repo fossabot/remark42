@@ -16,9 +16,10 @@ import { OAuth } from './components/oauth';
 import { messages } from './auth.messsages';
 import { useDropdown } from './auth.hooks';
 import { getProviders, getTokenInvalidReason } from './auth.utils';
-import { emailSignin, verifyEmailSignin, anonymousSignin } from './auth.api';
+import { emailSignin, verifyEmailSignin, anonymousSignin, telegramSignin, verifyTelegramSignin } from './auth.api';
 
 import styles from './auth.module.css';
+import { TelegramParams } from 'common/types';
 
 export function Auth() {
   const intl = useIntl();
@@ -29,6 +30,8 @@ export function Auth() {
   const [isLoading, setLoading] = useState(false);
   const [view, setView] = useState<typeof formProviders[number] | 'token'>(formProviders[0]);
   const [ref, isDropdownShowed, toggleDropdownState] = useDropdown(view === 'token');
+  const initialTelegramParams = { bot: '', token: '' };
+  const [telegramParams, setTelegramParams] = useState<TelegramParams>(initialTelegramParams);
 
   // Errors
   const [invalidReason, setInvalidReason] = useState<keyof typeof messages | null>(null);
@@ -44,11 +47,15 @@ export function Auth() {
     toggleDropdownState();
   }
 
-  function handleProviderChange(evt: Event) {
+  async function handleProviderChange(evt: Event) {
     const { value } = evt.currentTarget as HTMLInputElement;
 
     setInvalidReason(null);
     setView(value as typeof formProviders[number]);
+    if (value === 'telegram' && !telegramParams.token) {
+      const params = await telegramSignin();
+      setTelegramParams(params);
+    }
   }
 
   async function handleSubmit(evt: Event) {
@@ -73,6 +80,12 @@ export function Auth() {
 
           await emailSignin(email, username);
           setView('token');
+          break;
+        }
+        case 'telegram': {
+          const user = await verifyTelegramSignin(telegramParams.token);
+          dispath(setUser(user));
+          setTelegramParams(initialTelegramParams);
           break;
         }
         case 'token': {
@@ -110,7 +123,13 @@ export function Auth() {
     <>
       {errorMessage && <div className={clsx('auth-error', styles.error)}>{errorMessage}</div>}
       <Button className="auth-submit" type="submit" disabled={isLoading}>
-        {isLoading ? <Spinner /> : intl.formatMessage(messages.submit)}
+        {isLoading ? (
+          <Spinner />
+        ) : view === 'telegram' ? (
+          intl.formatMessage(messages.telegramCheck)
+        ) : (
+          intl.formatMessage(messages.submit)
+        )}
       </Button>
     </>
   );
@@ -201,22 +220,24 @@ export function Auth() {
                         ))}
                       </div>
                     )}
-                    <div className={clsx('auth-row', styles.row)}>
-                      <Input
-                        className="auth-input-username"
-                        required
-                        name="username"
-                        minLength={3}
-                        pattern="[\p{L}\d\s_]+"
-                        title={intl.formatMessage(messages.usernameRestriction)}
-                        placeholder={intl.formatMessage(messages.username)}
-                        disabled={isLoading}
-                        onBlur={(evt) => {
-                          const element = evt.target as HTMLInputElement;
-                          element.value = element.value.trim();
-                        }}
-                      />
-                    </div>
+                    {view !== 'telegram' && (
+                      <div className={clsx('auth-row', styles.row)}>
+                        <Input
+                          className="auth-input-username"
+                          required
+                          name="username"
+                          minLength={3}
+                          pattern="[\p{L}\d\s_]+"
+                          title={intl.formatMessage(messages.usernameRestriction)}
+                          placeholder={intl.formatMessage(messages.username)}
+                          disabled={isLoading}
+                          onBlur={(evt) => {
+                            const element = evt.target as HTMLInputElement;
+                            element.value = element.value.trim();
+                          }}
+                        />
+                      </div>
+                    )}
                     {view === 'email' && (
                       <div className={clsx('auth-row', styles.row)}>
                         <Input
@@ -227,6 +248,18 @@ export function Auth() {
                           placeholder={intl.formatMessage(messages.emailAddress)}
                           disabled={isLoading}
                         />
+                      </div>
+                    )}
+                    {view === 'telegram' && (
+                      <div className={clsx('auth-row', styles.row)}>
+                        {telegramParams && telegramParams.bot && telegramParams.token && (
+                          <a
+                            href={`https://t.me/${telegramParams.bot}/?start=${telegramParams.token}`}
+                            className="comment-form__markdown-link"
+                          >
+                            {intl.formatMessage(messages.telegramLink)}
+                          </a>
+                        )}
                       </div>
                     )}
                     <input className={styles.honeypot} type="checkbox" tabIndex={-1} autoComplete="off" />
